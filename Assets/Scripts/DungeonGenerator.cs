@@ -6,6 +6,7 @@ public class DungeonGenerator : MonoBehaviour
 {
     public GameObject roomPrefab;
     public GameObject hallPrefab;
+    public GameObject noHallPrefab;
     public int roomSize = 15;
     public int hallSize = 10;
 
@@ -67,11 +68,19 @@ public class DungeonGenerator : MonoBehaviour
         {
             if (!hallObject.ContainsKey(hallIdx))
             {
-                if (hallIdx.z == 0) hallObject[hallIdx] = Instantiate(hallPrefab, HallPosition(hallIdx), Quaternion.identity);
-                else if (hallIdx.z == 1) hallObject[hallIdx] = Instantiate(hallPrefab, HallPosition(hallIdx), Quaternion.Euler(0, 0, 90));
-                hallLeft--;
+                if (hallLeft >= 0)
+                {
+                    if (hallIdx.z == 0) hallObject[hallIdx] = Instantiate(hallPrefab, HallPosition(hallIdx), Quaternion.identity);
+                    else if (hallIdx.z == 1) hallObject[hallIdx] = Instantiate(hallPrefab, HallPosition(hallIdx), Quaternion.Euler(0, 0, 90));
+                    hallLeft--;
+                }
+                else
+                {
+                    if (hallIdx.z == 0) hallObject[hallIdx] = Instantiate(noHallPrefab, HallPosition(hallIdx), Quaternion.identity);
+                    else if (hallIdx.z == 1) hallObject[hallIdx] = Instantiate(noHallPrefab, HallPosition(hallIdx), Quaternion.Euler(0, 0, 90));
+                    hallLeft--;
+                }
             }
-            if (hallLeft <= 0) break;
         }
 
         heightNow += levelHeight;

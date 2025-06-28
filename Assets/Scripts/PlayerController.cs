@@ -8,11 +8,11 @@ public class PlayerController : MonoBehaviour
 
     public float dashDistance = 3f;
     public float dashDuration = 0.25f;
-    private float dashUntil;
+    private float dashTimeLeft = 0;
     private Vector3 dashDirection;
 
-    private string state = "Normal";
-    public Vector3 direction;
+    public string state = "Normal";
+    private Vector3 direction;
 
     private Rigidbody2D rb;
 
@@ -21,7 +21,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
     }
 
-    void FixedUpdate()
+    void Update()
     {
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         direction = mousePosition - transform.position;
@@ -35,20 +35,22 @@ public class PlayerController : MonoBehaviour
             float vertical = Input.GetAxisRaw("Vertical");
             rb.velocity = new Vector2(horizontal, vertical).normalized * speed;
 
-            if (Input.GetMouseButton(1))
+            if (Input.GetMouseButtonDown(1))
             {
-                dashUntil = Time.time + dashDuration;
+                dashTimeLeft = dashDuration;
                 dashDirection = direction;
                 state = "Dash";
             }
         }
         else if (state == "Dash")
         {
-            rb.velocity = dashDirection * dashDistance / dashDuration;
-            if (Time.time >= dashUntil)
+            dashTimeLeft -= Time.deltaTime;
+            if (dashTimeLeft <= 0)
             {
+                rb.velocity = Vector3.zero;
                 state = "Normal";
             }
+            rb.velocity = dashDirection * dashDistance / dashDuration;
         }
         // weapon.transform.rotation = Quaternion.Euler(new Vector3(0, 0, angle));
     }
