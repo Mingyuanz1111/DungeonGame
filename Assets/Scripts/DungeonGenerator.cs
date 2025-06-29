@@ -19,6 +19,7 @@ public class DungeonGenerator : MonoBehaviour
     private int prvLevelWidth = 1;
     private int levelHeight = 3;
 
+    public Base baseScript;
     Dictionary<Vector2Int, GameObject> roomObject = new();
     Dictionary<Vector3Int, GameObject> hallObject = new();
     Dictionary<Vector2Int, List<Vector2Int>> roomGraph = new();
@@ -35,7 +36,7 @@ public class DungeonGenerator : MonoBehaviour
         AddHallToGraph(new Vector2Int(0, 2), new Vector2Int(0, 3));
         AddHallToGraph(new Vector2Int(0, 1), new Vector2Int(1, 1));
         AddHallToGraph(new Vector2Int(0, 2), new Vector2Int(-1, 2));
-        levelWidth = 3;
+        /*levelWidth = 3;
         levelHeight = 2;
         GenerateLevel();
         levelHeight = 3;
@@ -44,12 +45,15 @@ public class DungeonGenerator : MonoBehaviour
         levelHeight = 2;
         GenerateLevel();
         levelHeight = 3;
-        GenerateLevel();
+        GenerateLevel();*/
     }
 
     void Update()
     {
-        
+        if (!baseScript.isMoving)
+        {
+            GenerateLevel();
+        }
     }
 
     public void GenerateLevel()
@@ -145,9 +149,12 @@ public class DungeonGenerator : MonoBehaviour
             }
         }
 
+        baseScript.ResetPath();
+
         Vector2Int roomNow = nextBasePos;
         while (roomNow != previousRoom[roomNow])
         {
+            baseScript.path.Add(RoomPosition(roomNow));
             Vector3Int hallIdx;
             Vector2 diff = roomNow - previousRoom[roomNow];
             if (diff.x == 1) hallIdx = new Vector3Int(roomNow.x, roomNow.y, 0);
@@ -157,21 +164,24 @@ public class DungeonGenerator : MonoBehaviour
             Instantiate(railPrefab, HallPosition(hallIdx), Quaternion.Euler(0, 0, (diff.x != 0)?0:90));
             roomNow = previousRoom[roomNow];
         }
+        baseScript.path.Reverse();
+
+        baseScript.StartMove();
 
         prvLevelWidth = levelHeight;
         heightPrv = heightNow;
         heightNow += levelHeight;
     }
 
-    Vector3 RoomPosition(Vector2Int idx)
+    Vector2 RoomPosition(Vector2Int idx)
     {
-        return new Vector3(idx.x * (roomSize+hallSize), idx.y * (roomSize + hallSize), 0f);
+        return new Vector3(idx.x * (roomSize+hallSize), idx.y * (roomSize + hallSize));
     }
 
-    Vector3 HallPosition(Vector3Int idx)
+    Vector2 HallPosition(Vector3Int idx)
     {
-        if(idx.z == 0) return new Vector3(idx.x * (roomSize + hallSize) - 12.5f, idx.y * (roomSize + hallSize), 0f);
-        else return new Vector3(idx.x * (roomSize + hallSize), idx.y * (roomSize + hallSize) - 12.5f, 0f);
+        if(idx.z == 0) return new Vector3(idx.x * (roomSize + hallSize) - 12.5f, idx.y * (roomSize + hallSize));
+        else return new Vector3(idx.x * (roomSize + hallSize), idx.y * (roomSize + hallSize) - 12.5f);
     }
 
     void Shuffle<T>(List<T> list)
