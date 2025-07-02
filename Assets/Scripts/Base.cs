@@ -5,16 +5,24 @@ using UnityEngine;
 public class Base : MonoBehaviour
 {
     public bool isMoving = false;
-
-    public float timeBetweenLevels = 90f;
+    public bool isBoosted = false;
+    
     public float distBetweenRooms = 25f;
-    private float timeUntilDest;
+    private float timeBetweenRooms;
     private float timeUntilNext;
+
     private float moveSpeed;
+    public float boostMultiplier = 2f;
+
+    public float boostDuration = 1f;
+    private float boostTimeLeft = 0f;
+
     public int pathIdx;
     public List<Vector2> path;
 
     private Rigidbody2D rb;
+    public DungeonGenerator dungeonGen;
+    public Gamemode gamemode;
 
     void Start()
     {
@@ -25,21 +33,30 @@ public class Base : MonoBehaviour
     {
         if(isMoving)
         {
-            if(timeUntilNext <= 0)
+            if (timeUntilNext <= 0)
             {
                 pathIdx++;
-                timeUntilNext = timeBetweenLevels / path.Count;
+                timeUntilNext = timeBetweenRooms;
             }
             if (pathIdx >= path.Count)
             {
+                rb.velocity = Vector3.zero;
                 isMoving = false;
             }
             else
             {
-                rb.velocity = (path[pathIdx] - (Vector2)transform.position).normalized * moveSpeed;
-                timeUntilDest -= Time.deltaTime;
-                timeUntilNext -= Time.deltaTime;
+                rb.velocity = (path[pathIdx] - (Vector2)transform.position).normalized * moveSpeed * ((isBoosted)?boostMultiplier:1f);
+                timeUntilNext -= Time.deltaTime * ((isBoosted) ? boostMultiplier : 1f);
             }
+        }
+        if (boostTimeLeft > 0)
+        {
+            isBoosted = true;
+            boostTimeLeft -= Time.deltaTime;
+        }
+        else
+        {
+            isBoosted = false;
         }
     }
 
@@ -47,13 +64,13 @@ public class Base : MonoBehaviour
     {
         pathIdx = 0;
         path.Clear();
-}
+    }
 
     public void StartMove()
     {
         isMoving = true;
-        timeUntilDest = timeBetweenLevels;
-        timeUntilNext = timeBetweenLevels / path.Count;
-        moveSpeed = distBetweenRooms / timeUntilNext;
+        timeBetweenRooms = gamemode.timeUntilNextPhase / path.Count;
+        timeUntilNext = timeBetweenRooms;
+        moveSpeed = distBetweenRooms / timeBetweenRooms;
     }
 }

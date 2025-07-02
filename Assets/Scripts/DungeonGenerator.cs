@@ -13,29 +13,38 @@ public class DungeonGenerator : MonoBehaviour
     public int hallSize = 10;
 
     public int level = 1;
-    private int heightPrv = 0;
-    private int heightNow = 4;
     private int levelWidth = 5;
     private int prvLevelWidth = 1;
-    private int levelHeight = 3;
+
+    private int totalHeight = 4;
+    private int nextHeight = 3;
+    private List<int> levelHeight = new List<int> { 4 };
+    private int dungeonHeight = 4;
 
     public Base baseScript;
-    Dictionary<Vector2Int, GameObject> roomObject = new();
-    Dictionary<Vector3Int, GameObject> hallObject = new();
-    Dictionary<Vector2Int, List<Vector2Int>> roomGraph = new();
-    Dictionary<Vector2Int, Vector2Int> dsuPar = new();
+    public Transform fogTransform;
+    public Transform lowerFogTransform;
+    private Dictionary<Vector2Int, GameObject> roomObject = new();
+    private Dictionary<Vector3Int, GameObject> hallObject = new();
+    private Dictionary<Vector2Int, List<Vector2Int>> roomGraph = new();
+    private Dictionary<Vector2Int, Vector2Int> dsuPar = new();
 
-    Vector2Int basePos = new Vector2Int(0, 0);
-    Vector2Int nextBasePos = new Vector2Int(0, 4);
+    private Vector2Int basePos = new Vector2Int(0, 0);
+    private Vector2Int nextBasePos = new Vector2Int(0, 4);
+    private Vector2 fogPos;
+    private Vector2 lowerFogPos;
 
-    void Start()
+    void Awake()
     {
-        roomObject[new Vector2Int(0, heightNow - 1)] = null;
+        roomObject[new Vector2Int(0, totalHeight - 1)] = null;
         AddHallToGraph(new Vector2Int(0, 0), new Vector2Int(0, 1));
         AddHallToGraph(new Vector2Int(0, 1), new Vector2Int(0, 2));
         AddHallToGraph(new Vector2Int(0, 2), new Vector2Int(0, 3));
         AddHallToGraph(new Vector2Int(0, 1), new Vector2Int(1, 1));
         AddHallToGraph(new Vector2Int(0, 2), new Vector2Int(-1, 2));
+    }
+    void Start()
+    {
         /*levelWidth = 3;
         levelHeight = 2;
         GenerateLevel();
@@ -50,10 +59,12 @@ public class DungeonGenerator : MonoBehaviour
 
     void Update()
     {
-        if (!baseScript.isMoving)
+        /*if (!baseScript.isMoving)
         {
             GenerateLevel();
-        }
+        }*/
+        fogTransform.position = Vector3.MoveTowards(fogTransform.position, fogPos, Time.deltaTime * 40f);
+        lowerFogTransform.position = Vector3.MoveTowards(lowerFogTransform.position, lowerFogPos, Time.deltaTime * 40f);
     }
 
     public void GenerateLevel()
@@ -65,7 +76,7 @@ public class DungeonGenerator : MonoBehaviour
         dsuPar.Clear();
         for(int i = -levelWidth/2; i <= levelWidth / 2; i++)
         {
-            for (int j = heightNow; j < heightNow + levelHeight; j++)
+            for (int j = totalHeight; j < totalHeight + nextHeight; j++)
             {
                 dsuPar[new Vector2Int(i, j)] = new Vector2Int(i, j);
                 roomObject[new Vector2Int(i, j)] = Instantiate(roomPrefab, RoomPosition(new Vector2Int(i, j)), Quaternion.identity);
@@ -75,17 +86,26 @@ public class DungeonGenerator : MonoBehaviour
         int guaranteeHall = Random.Range(-prvLevelWidth / 2, -prvLevelWidth / 2 + 1);
         for (int i = -levelWidth / 2; i <= levelWidth / 2; i++)
         {
-            if (roomObject.ContainsKey(new Vector2Int(i, heightNow - 1)) && (i == guaranteeHall || Random.Range(0, 3) == 0))
+            Vector3Int hallIdx = new Vector3Int(i, totalHeight, 1);
+            if (roomObject.ContainsKey(new Vector2Int(i, totalHeight - 1)) && (i == guaranteeHall || Random.Range(0, 3) == 0))
             {
-                Vector3Int hallIdx = new Vector3Int(i, heightNow, 1);
                 hallObject[hallIdx] = Instantiate(hallPrefab, HallPosition(hallIdx), Quaternion.Euler(0, 0, 90));
-                AddHallToGraph(new Vector2Int(i, heightNow - 1), new Vector2Int(i, heightNow));
+                AddHallToGraph(new Vector2Int(i, totalHeight - 1), new Vector2Int(i, totalHeight));
             }
-            for (int j = heightNow; j < heightNow + levelHeight; j++)
+            else
+            {
+                Instantiate(noHallPrefab, HallPosition(hallIdx), Quaternion.Euler(0, 0, 90));
+            }
+            for (int j = totalHeight; j < totalHeight + nextHeight; j++)
             {
                 if (i > -levelWidth / 2) hallIdxList.Add(new Vector3Int(i, j, 0));
-                if (j > heightNow) hallIdxList.Add(new Vector3Int(i, j, 1));
+                if (j > totalHeight) hallIdxList.Add(new Vector3Int(i, j, 1));
             }
+        }
+        for (int i = totalHeight; i <= totalHeight + nextHeight; i++)
+        {
+            Instantiate(noHallPrefab, HallPosition(new Vector3Int(-levelWidth / 2, i, 0)), Quaternion.identity);
+            Instantiate(noHallPrefab, HallPosition(new Vector3Int(levelWidth / 2 + 1, i, 0)), Quaternion.identity);
         }
         Shuffle(hallIdxList);
 
@@ -100,7 +120,7 @@ public class DungeonGenerator : MonoBehaviour
                 AddHallToGraph(u, v);
             }
         }
-        int hallLeft = levelWidth * levelHeight / 7;
+        int hallLeft = levelWidth * nextHeight / 7;
         foreach (Vector3Int hallIdx in hallIdxList)
         {
             if (!hallObject.ContainsKey(hallIdx))
@@ -127,7 +147,7 @@ public class DungeonGenerator : MonoBehaviour
         if (level > 2)
         {
             basePos = nextBasePos;
-            nextBasePos = new Vector2Int(Random.Range(-levelWidth / 2, levelWidth / 2 + 1), Random.Range(heightNow,heightNow + levelHeight));
+            nextBasePos = new Vector2Int(Random.Range(-levelWidth / 2, levelWidth / 2 + 1), Random.Range(totalHeight, totalHeight + nextHeight));
         }
         Instantiate(checkpointPrefab, RoomPosition(nextBasePos), Quaternion.identity);
         Debug.Log($"Level {level} : {nextBasePos}");
@@ -145,7 +165,7 @@ public class DungeonGenerator : MonoBehaviour
             if (tp == nextBasePos) break;
             foreach (Vector2Int v in roomGraph[tp])
             {
-                if (v.y >= heightPrv && !visitedRooms.Contains(v)) rdq.Push((v, tp));
+                if (v.y >= totalHeight - levelHeight[levelHeight.Count-1] && !visitedRooms.Contains(v)) rdq.Push((v, tp));
             }
         }
 
@@ -168,9 +188,13 @@ public class DungeonGenerator : MonoBehaviour
 
         baseScript.StartMove();
 
-        prvLevelWidth = levelHeight;
-        heightPrv = heightNow;
-        heightNow += levelHeight;
+        prvLevelWidth = levelWidth;
+        levelHeight.Add(nextHeight);
+        totalHeight += levelHeight[levelHeight.Count - 1];
+        dungeonHeight += levelHeight[levelHeight.Count - 1] - ((levelHeight.Count > 3) ? levelHeight[levelHeight.Count - 4] : 0);
+
+        fogPos = RoomPosition(new Vector2Int(0, totalHeight));
+        lowerFogPos = RoomPosition(new Vector2Int(0, totalHeight - dungeonHeight));
     }
 
     Vector2 RoomPosition(Vector2Int idx)
@@ -207,7 +231,7 @@ public class DungeonGenerator : MonoBehaviour
         } else return false;
     }
 
-    void AddHallToGraph(Vector2Int a, Vector2Int b)
+    void AddHallToGraph(Vector2Int a, Vector2Int b) 
     {
         if (!roomGraph.ContainsKey(a)) roomGraph[a] = new List<Vector2Int>();
         if (!roomGraph.ContainsKey(b)) roomGraph[b] = new List<Vector2Int>();
