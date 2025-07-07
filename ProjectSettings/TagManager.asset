@@ -41,3 +41,18 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Background
+    uniqueID: 975211775
+    locked: 1
+  - name: Map
+    uniqueID: 2944698421
+    locked: 1
+  - name: Obstacle
+    uniqueID: 5779703
+    locked: 0
+  - name: Character
+    uniqueID: 1391406969
+    locked: 0
+  - name: Fog
+    uniqueID: 1432353507
+    locked: 1

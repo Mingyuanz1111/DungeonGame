@@ -10,18 +10,21 @@ public class Gamemode : MonoBehaviour
     public string phase = "Night";
     public Dictionary<string, float> phaseDuration = new Dictionary<string, float>
     {
-        { "Day", 10f },
-        { "Evening", 5f },
-        { "Night", 10f }
+        { "Day", 5f },
+        { "Evening", 2f },
+        { "Night", 5f }
     };
     public float timeUntilNextPhase;
 
-    public Base baseScript;
+    public Base baseObject;
+    private Base baseScript;
     private DungeonGenerator dungeonGen;
+    public Fog fogScript;
     public TextMeshProUGUI timerText;
 
     void Start()
     {
+        baseScript = baseObject.GetComponent<Base>();
         dungeonGen = GetComponent<DungeonGenerator>();
         RunNextPhase();
     }
@@ -45,6 +48,7 @@ public class Gamemode : MonoBehaviour
         else if(phase == "Evening")
         {
             phase = "Night";
+            fogScript.Move(baseObject.transform.position, new Vector3(dungeonGen.roomSize, dungeonGen.roomSize, 1f), 120f);
         }
         else if (phase == "Night")
         {

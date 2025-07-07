@@ -22,8 +22,9 @@ public class DungeonGenerator : MonoBehaviour
     private int dungeonHeight = 4;
 
     public Base baseScript;
-    public Transform fogTransform;
-    public Transform lowerFogTransform;
+    public Transform borderTransform;
+    public Transform lowerBorderTransform;
+    public Fog fogScript;
     private Dictionary<Vector2Int, GameObject> roomObject = new();
     private Dictionary<Vector3Int, GameObject> hallObject = new();
     private Dictionary<Vector2Int, List<Vector2Int>> roomGraph = new();
@@ -31,8 +32,8 @@ public class DungeonGenerator : MonoBehaviour
 
     private Vector2Int basePos = new Vector2Int(0, 0);
     private Vector2Int nextBasePos = new Vector2Int(0, 4);
-    private Vector2 fogPos;
-    private Vector2 lowerFogPos;
+    private Vector2 borderPos;
+    private Vector2 lowerBorderPos;
 
     void Awake()
     {
@@ -63,8 +64,8 @@ public class DungeonGenerator : MonoBehaviour
         {
             GenerateLevel();
         }*/
-        fogTransform.position = Vector3.MoveTowards(fogTransform.position, fogPos, Time.deltaTime * 40f);
-        lowerFogTransform.position = Vector3.MoveTowards(lowerFogTransform.position, lowerFogPos, Time.deltaTime * 40f);
+        borderTransform.position = Vector3.MoveTowards(borderTransform.position, borderPos, Time.deltaTime * 40f);
+        lowerBorderTransform.position = Vector3.MoveTowards(lowerBorderTransform.position, lowerBorderPos, Time.deltaTime * 40f);
     }
 
     public void GenerateLevel()
@@ -193,8 +194,9 @@ public class DungeonGenerator : MonoBehaviour
         totalHeight += levelHeight[levelHeight.Count - 1];
         dungeonHeight += levelHeight[levelHeight.Count - 1] - ((levelHeight.Count > 3) ? levelHeight[levelHeight.Count - 4] : 0);
 
-        fogPos = RoomPosition(new Vector2Int(0, totalHeight));
-        lowerFogPos = RoomPosition(new Vector2Int(0, totalHeight - dungeonHeight));
+        borderPos = RoomPosition(new Vector2Int(0, totalHeight));
+        lowerBorderPos = RoomPosition(new Vector2Int(0, totalHeight - dungeonHeight));
+        fogScript.MoveY((borderPos.y + lowerBorderPos.y) / 2f - (roomSize + hallSize) / 2f, borderPos.y - lowerBorderPos.y, 120f);
     }
 
     Vector2 RoomPosition(Vector2Int idx)
